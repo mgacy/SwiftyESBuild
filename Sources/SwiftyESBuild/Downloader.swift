@@ -117,7 +117,7 @@ class Downloader: Downloading {
         }
 
         logger.debug("Downloading \(npmPackage.name) from \(npmVersion.tarball)...")
-        let client = HTTPClient(eventLoopGroupProvider: .createNew)
+        let client = HTTPClient(eventLoopGroupProvider: .singleton)
 
         do {
             try await withTemporaryDirectory(removeTreeOnDeinit: true) { tmpDir in
@@ -169,12 +169,12 @@ class Downloader: Downloading {
         switch version {
         case let .fixed(rawVersion):
             if rawVersion.starts(with: "v") {
-                return rawVersion
-            } else {
                 /**
-                 Releases on GitHub are prefixed with "v" so we need to include it.
+                 Versions on the npm Registry are not prefixed with "v" so we need to remove it.
                  */
-                return "v\(rawVersion)"
+                return String(rawVersion.dropFirst())
+            } else {
+                return rawVersion
             }
         case .latest: return npmPackage.distTags.latest
         }
@@ -193,7 +193,7 @@ class Downloader: Downloading {
         let packageURL = "https://registry.npmjs.org/\(npmPackageName)"
         logger.debug("Getting the package metadata from \(packageURL)")
 
-        let httpClient = HTTPClient(eventLoopGroupProvider: .createNew)
+        let httpClient = HTTPClient(eventLoopGroupProvider: .singleton)
 
         var package: NPMPackage!
         do {
